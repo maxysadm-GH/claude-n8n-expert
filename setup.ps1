@@ -110,6 +110,12 @@ Write-Host "Restart Claude Desktop to apply changes." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Installed:" -ForegroundColor White
 Write-Host "  - n8n-mcp (543 nodes, 2709 templates)" -ForegroundColor Gray
-Write-Host "  - n8n-skills (7 workflow skills)" -ForegroundColor Gray
+Write-Host "  - n8n-skills (7 core workflow skills)" -ForegroundColor Gray
+Write-Host "  - VHC ShipStation integration skill" -ForegroundColor Gray
+Write-Host "  - Fishbowl inventory skill" -ForegroundColor Gray
+Write-Host "  - Azure Logic Apps skill" -ForegroundColor Gray
+Write-Host "  - Shopify Bulk API skill" -ForegroundColor Gray
+Write-Host "  - HubSpot CRM API skill" -ForegroundColor Gray
+Write-Host "  - Vosges ICP Validator skill" -ForegroundColor Gray
 Write-Host "  - Teams/SharePoint expert skill" -ForegroundColor Gray
-Write-Host "  - Airtable, Playwright, Sequential Thinking MCPs" -ForegroundColor Gray
+Write-Host "  - Airtable, Sequential Thinking MCPs" -ForegroundColor Gray

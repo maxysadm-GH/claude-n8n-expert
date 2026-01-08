@@ -74,6 +74,7 @@ validate_workflow_connections(workflow)
 
 ## Skills Installed
 
+### Core n8n Skills (from n8n-skills repo)
 | Skill | Purpose |
 |-------|---------|
 | n8n-expression-syntax | {{}} patterns, $json/$node |
@@ -83,7 +84,17 @@ validate_workflow_connections(workflow)
 | n8n-node-configuration | Operation-aware config |
 | n8n-code-javascript | Code node patterns |
 | n8n-code-python | Python limitations |
-| n8n-teams-sharepoint-expert | Microsoft 365 integration |
+
+### Integration Skills (from this repo)
+| Skill | Purpose |
+|-------|---------|
+| n8n-teams-sharepoint-expert | Microsoft 365 integration patterns |
+| vhc-shipstation | ShipStation API + VHC workflows |
+| fishbowl-inventory | Fishbowl warehouse integration |
+| azure-logic-apps | Logic Apps JSON patterns |
+| shopify-bulk-api | Large data exports (100K+) |
+| hubspot-api | CRM integration patterns |
+| vosges-icp-validator | Brand campaign validation |
 
 ## License
 
