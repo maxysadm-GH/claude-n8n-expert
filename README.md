@@ -8,8 +8,8 @@ Portable Claude Code configuration for n8n workflow building with Microsoft Team
 - **n8n-skills** - 7 complementary Claude Code skills
 - **Teams/SharePoint skill** - Microsoft 365 integration patterns
 - **Airtable MCP** - Database operations
-- **Playwright MCP** - Browser automation
 - **Sequential Thinking MCP** - Complex reasoning
+- **Browser**: Use `claude --chrome` flag (no Playwright needed)
 
 ## Quick Start
 
