@@ -13,7 +13,12 @@ Portable Claude Code configuration for n8n workflow building with Microsoft Team
 
 ## Quick Start
 
-### Windows
+### Windows (One-liner)
+```powershell
+git clone https://github.com/maxysadm-GH/claude-n8n-expert.git; cd claude-n8n-expert; .\setup.ps1
+```
+
+### Windows (Step by step)
 ```powershell
 git clone https://github.com/maxysadm-GH/claude-n8n-expert.git
 cd claude-n8n-expert

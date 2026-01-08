@@ -25,6 +25,32 @@ if (!(Test-Path $ClaudeSkillsDir)) {
     New-Item -ItemType Directory -Path $ClaudeSkillsDir -Force | Out-Null
 }
 
+# Copy Claude Code MCP config
+$ClaudeCodeMcp = "$env:USERPROFILE\.claude\mcp.json"
+$McpSource = Join-Path $ScriptDir "configs\claude-code-mcp.json"
+if (Test-Path $McpSource) {
+    $McpConfig = Get-Content $McpSource -Raw | ConvertFrom-Json
+    
+    # Preserve existing Airtable key if present
+    if (Test-Path $ClaudeCodeMcp) {
+        $ExistingMcp = Get-Content $ClaudeCodeMcp -Raw | ConvertFrom-Json
+        if ($ExistingMcp.mcpServers.airtable.env.AIRTABLE_API_KEY -and $ExistingMcp.mcpServers.airtable.env.AIRTABLE_API_KEY -notlike '*${*') {
+            $McpConfig.mcpServers.airtable.env.AIRTABLE_API_KEY = $ExistingMcp.mcpServers.airtable.env.AIRTABLE_API_KEY
+        }
+    }
+    
+    $McpConfig | ConvertTo-Json -Depth 10 | Set-Content $ClaudeCodeMcp
+    Write-Host "✓ Claude Code MCP config installed" -ForegroundColor Green
+    
+    # Check if Airtable key needs to be set
+    if ($McpConfig.mcpServers.airtable.env.AIRTABLE_API_KEY -like '*${*') {
+        Write-Host ""
+        Write-Host "NOTE: Airtable API key not configured." -ForegroundColor Yellow
+        Write-Host "Edit $ClaudeCodeMcp and replace the placeholder, or run:" -ForegroundColor Yellow
+        Write-Host '  $env:AIRTABLE_API_KEY = "your-key"' -ForegroundColor Gray
+    }
+}
+
 # Copy skills
 Write-Host "Installing n8n skills..." -ForegroundColor Yellow
 $SkillsSource = Join-Path $ScriptDir "skills"
