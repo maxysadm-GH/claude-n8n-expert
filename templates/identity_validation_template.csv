@@ -1,0 +1,4 @@
+name,email,phone,company_name,department,is_vip,tier,notes
+"John Smith","john.smith@acmecorp.com","+15551234567","Acme Corporation","IT","false","standard","Main IT contact"
+"Jane Doe","jane.doe@techstartup.io","+15559876543","Tech Startup Inc","Operations","true","premium","CEO - always escalate P1"
+"Bob Johnson","bob@enterprise.com","+15555551234","Enterprise Solutions","Finance","false","enterprise","Billing contact"

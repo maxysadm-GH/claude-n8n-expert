@@ -1,0 +1,499 @@
+{
+  "name": "01 - Call Handler (Main)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elevenlabs-handler",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "ElevenLabs Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "elevenlabs-handler"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse and validate incoming ElevenLabs webhook\nconst body = $input.first().json.body;\n\n// Extract event type\nconst eventType = body.event_type || body.type || 'unknown';\nconst conversationId = body.conversation_id || body.call_id;\nconst timestamp = new Date().toISOString();\n\n// Build normalized event object\nconst event = {\n  event_type: eventType,\n  conversation_id: conversationId,\n  timestamp: timestamp,\n  raw: body\n};\n\n// Extract relevant data based on event type\nif (eventType === 'tool_call' || eventType === 'tool.call') {\n  event.tool_name = body.tool_name || body.tool?.name;\n  event.tool_input = body.tool_input || body.tool?.parameters || body.parameters;\n} else if (eventType === 'conversation.ended' || eventType === 'call.ended') {\n  event.summary = body.summary;\n  event.transcript = body.transcript || body.messages;\n  event.duration_seconds = body.duration_seconds || body.duration;\n  event.outcome = body.outcome || 'completed';\n  event.recording_url = body.recording_url;\n} else if (eventType === 'conversation.started' || eventType === 'call.started') {\n  event.caller_phone = body.caller_phone || body.from;\n}\n\nreturn [{ json: event }];"
+      },
+      "id": "parse-event",
+      "name": "Parse Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "value": "conversation.started",
+              "value2": "call.started"
+            },
+            {
+              "value": "tool_call",
+              "value2": "tool.call"
+            },
+            {
+              "value": "conversation.ended",
+              "value2": "call.ended"
+            }
+          ]
+        },
+        "dataType": "string",
+        "value1": "={{ $json.event_type }}",
+        "fallbackOutput": "extra"
+      },
+      "id": "route-event",
+      "name": "Route by Event Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/call_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"elevenlabs_conversation_id\": \"{{ $json.conversation_id }}\",\n  \"caller_phone\": \"{{ $json.caller_phone || '' }}\",\n  \"status\": \"in_progress\"\n}"
+      },
+      "id": "log-call-start",
+      "name": "Log Call Start",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 140]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "value": "validate_identity"
+            },
+            {
+              "value": "search_kb"
+            },
+            {
+              "value": "assess_priority"
+            },
+            {
+              "value": "log_call"
+            }
+          ]
+        },
+        "dataType": "string",
+        "value1": "={{ $json.tool_name }}",
+        "fallbackOutput": "extra"
+      },
+      "id": "route-tool",
+      "name": "Route by Tool",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "id": "exec-identity",
+      "name": "Execute: Identity Validation",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1160, 140],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "id": "exec-kb-search",
+      "name": "Execute: KB Search",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1160, 280],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "id": "exec-priority",
+      "name": "Execute: Priority Assessment",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1160, 420],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Identity Validation Logic (inline for now, move to sub-workflow later)\nconst input = $json.tool_input || {};\nconst callerName = input.caller_name || '';\nconst callerEmail = input.caller_email || '';\nconst callbackNumber = input.callback_number || '';\n\n// Placeholder - in production, this queries Supabase\n// For now, return a sample response\nconst result = {\n  status: 'validated',\n  confidence: 85,\n  matched_contact: {\n    name: callerName,\n    company: 'Unknown',\n    email: callerEmail\n  },\n  message: `Caller identified as ${callerName}`\n};\n\nreturn [{ json: { result } }];"
+      },
+      "id": "identity-inline",
+      "name": "Identity Validation (Inline)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 140]
+    },
+    {
+      "parameters": {
+        "jsCode": "// KB Search Logic (inline for now)\nconst input = $json.tool_input || {};\nconst query = input.query || '';\nconst product = input.product || '';\n\n// Placeholder - in production, this does vector search in Supabase\nconst result = {\n  status: 'no_results',\n  escalate: false,\n  message: 'No matching knowledge base articles found.',\n  articles: []\n};\n\n// If Fishbowl is mentioned, return sample result\nif (query.toLowerCase().includes('fishbowl') || product.toLowerCase() === 'fishbowl') {\n  result.status = 'results_found';\n  result.message = 'Found relevant article for Fishbowl connection issues.';\n  result.top_result = {\n    title: 'Fishbowl Server Connection Error',\n    steps: [\n      { number: 1, instruction: 'Click OK on the error dialog to dismiss it' },\n      { number: 2, instruction: 'Click the DETAILS button to expand connection settings' },\n      { number: 3, instruction: 'Verify the Port number is 28192' },\n      { number: 4, instruction: 'If incorrect, update the port and click Connect' }\n    ],\n    confidence: 92\n  };\n  result.suggested_response = 'I can help with that. First, please click OK on that error message to dismiss it.';\n}\n\nreturn [{ json: { result } }];"
+      },
+      "id": "kb-search-inline",
+      "name": "KB Search (Inline)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 280]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Priority Assessment Logic\nconst input = $json.tool_input || {};\nconst summary = input.issue_summary || '';\nconst usersAffected = input.users_affected || 'one';\nconst businessImpact = input.business_impact || 'medium';\n\nconst text = summary.toLowerCase();\n\n// Priority keywords\nconst p1Keywords = ['down', 'outage', 'all users', 'everyone', 'entire', 'cannot work', 'critical', 'emergency'];\nconst p2Keywords = ['cannot login', 'error', 'not working', 'broken', 'failed', 'blocking'];\nconst p4Keywords = ['when you get a chance', 'not urgent', 'no rush', 'low priority'];\n\nlet priority = 'P3'; // Default\nlet reasoning = 'Standard support request';\n\n// Check for P1\nif (p1Keywords.some(kw => text.includes(kw)) || usersAffected === 'all' || businessImpact === 'critical') {\n  priority = 'P1';\n  reasoning = 'Critical issue affecting multiple users or business operations';\n}\n// Check for P2\nelse if (p2Keywords.some(kw => text.includes(kw)) || businessImpact === 'high') {\n  priority = 'P2';\n  reasoning = 'User blocked or significant workflow impact';\n}\n// Check for P4\nelse if (p4Keywords.some(kw => text.includes(kw)) || businessImpact === 'none') {\n  priority = 'P4';\n  reasoning = 'Low priority request, no immediate impact';\n}\n\n// SLA times\nconst slaMap = {\n  P1: { response: '15 minutes', resolution: '4 hours' },\n  P2: { response: '1 hour', resolution: '8 hours' },\n  P3: { response: '4 hours', resolution: '24 hours' },\n  P4: { response: '24 hours', resolution: '72 hours' }\n};\n\nconst result = {\n  priority,\n  sla: slaMap[priority],\n  reasoning\n};\n\nreturn [{ json: { result } }];"
+      },
+      "id": "priority-inline",
+      "name": "Priority Assessment (Inline)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log Call Update\nconst input = $json.tool_input || {};\n\nconst result = {\n  status: 'logged',\n  message: 'Call information updated'\n};\n\nreturn [{ json: { result } }];"
+      },
+      "id": "log-call-inline",
+      "name": "Log Call (Inline)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 560]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle call end - log final data and trigger email\nconst event = $json;\n\nconst callData = {\n  conversation_id: event.conversation_id,\n  summary: event.summary || 'No summary provided',\n  transcript: event.transcript,\n  duration_seconds: event.duration_seconds,\n  outcome: event.outcome || 'completed',\n  recording_url: event.recording_url,\n  completed_at: new Date().toISOString()\n};\n\nreturn [{ json: callData }];"
+      },
+      "id": "prepare-call-end",
+      "name": "Prepare Call End Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 480]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/call_log?elevenlabs_conversation_id=eq.{{ $json.conversation_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"summary\": \"{{ $json.summary }}\",\n  \"transcript\": {{ JSON.stringify($json.transcript) }},\n  \"duration_seconds\": {{ $json.duration_seconds || 0 }},\n  \"outcome\": \"{{ $json.outcome }}\",\n  \"recording_url\": \"{{ $json.recording_url || '' }}\",\n  \"status\": \"completed\",\n  \"completed_at\": \"{{ $json.completed_at }}\"\n}"
+      },
+      "id": "update-call-log",
+      "name": "Update Call Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 680]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@mbacio.com",
+        "toEmail": "support@mbacio.com",
+        "subject": "=[{{ $json.priority || 'P3' }}] New Support Request - {{ $json.caller_name || 'Unknown Caller' }}",
+        "emailType": "html",
+        "html": "=<h2>New Support Request</h2>\n<p><strong>Caller:</strong> {{ $json.caller_name || 'Unknown' }}</p>\n<p><strong>Company:</strong> {{ $json.company_name || 'Unknown' }}</p>\n<p><strong>Email:</strong> {{ $json.caller_email || 'Not provided' }}</p>\n<p><strong>Callback:</strong> {{ $json.callback_number || 'Not provided' }}</p>\n<p><strong>Duration:</strong> {{ Math.floor(($json.duration_seconds || 0) / 60) }}m {{ ($json.duration_seconds || 0) % 60 }}s</p>\n<hr>\n<h3>Issue Summary</h3>\n<p>{{ $json.summary || 'No summary available' }}</p>\n<hr>\n<p><small>Call ID: {{ $json.conversation_id }}</small></p>",
+        "options": {}
+      },
+      "id": "send-email",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1400, 680],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.result || { status: 'success' }) }}"
+      },
+      "id": "respond-tool",
+      "name": "Respond to Tool Call",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"acknowledged\", \"conversation_id\": \"{{ $json.conversation_id }}\" }"
+      },
+      "id": "respond-start",
+      "name": "Respond to Start",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1160, 60]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"processed\", \"conversation_id\": \"{{ $json.conversation_id }}\" }"
+      },
+      "id": "respond-end",
+      "name": "Respond to End",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1620, 680]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge results back to main flow\nconst result = $json.result || $json;\nreturn [{ json: { result } }];"
+      },
+      "id": "merge-results",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, 420]
+    }
+  ],
+  "connections": {
+    "ElevenLabs Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Event": {
+      "main": [
+        [
+          {
+            "node": "Route by Event Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Event Type": {
+      "main": [
+        [
+          {
+            "node": "Log Call Start",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route by Tool",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Call End Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Call Start": {
+      "main": [
+        [
+          {
+            "node": "Respond to Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Tool": {
+      "main": [
+        [
+          {
+            "node": "Identity Validation (Inline)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "KB Search (Inline)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Priority Assessment (Inline)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Call (Inline)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identity Validation (Inline)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Tool Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KB Search (Inline)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Tool Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Priority Assessment (Inline)": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Call (Inline)": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Respond to Tool Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Call End Data": {
+      "main": [
+        [
+          {
+            "node": "Update Call Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Call Log": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond to End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "virtual-receptionist"
+    }
+  ],
+  "triggerCount": 1,
+  "pinData": {}
+}

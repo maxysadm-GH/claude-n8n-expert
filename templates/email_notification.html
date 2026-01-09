@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Support Request - MBaCio</title>
+  <style>
+    /* Reset and base styles */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333333;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+
+    /* Header styles - color changes based on priority */
+    .header {
+      padding: 24px;
+      text-align: center;
+      border-radius: 0;
+    }
+
+    .header.p1 { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
+    .header.p2 { background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); }
+    .header.p3 { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+    .header.p4 { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+
+    .header h1 {
+      color: #ffffff;
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .priority-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      color: #ffffff;
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Content area */
+    .content {
+      padding: 24px;
+    }
+
+    /* Section styles */
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    /* Info grid for caller details */
+    .info-grid {
+      display: table;
+      width: 100%;
+    }
+
+    .info-row {
+      display: table-row;
+    }
+
+    .info-label {
+      display: table-cell;
+      width: 120px;
+      padding: 8px 12px 8px 0;
+      color: #6b7280;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    .info-value {
+      display: table-cell;
+      padding: 8px 0;
+      color: #111827;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Summary box */
+    .summary-box {
+      background: #f9fafb;
+      border-left: 4px solid #2563eb;
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .summary-box.p1 { border-left-color: #dc2626; }
+    .summary-box.p2 { border-left-color: #ea580c; }
+    .summary-box.p3 { border-left-color: #2563eb; }
+    .summary-box.p4 { border-left-color: #6b7280; }
+
+    .summary-box p {
+      margin: 0;
+      color: #374151;
+    }
+
+    /* Transcript section */
+    .transcript {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .transcript .agent {
+      color: #60a5fa;
+    }
+
+    .transcript .caller {
+      color: #34d399;
+    }
+
+    /* Button styles */
+    .button-container {
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #2563eb;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .button:hover {
+      background: #1d4ed8;
+    }
+
+    /* SLA info */
+    .sla-box {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .sla-box.p1 {
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
+
+    .sla-box h4 {
+      margin: 0 0 8px 0;
+      color: #92400e;
+      font-size: 14px;
+    }
+
+    .sla-box.p1 h4 {
+      color: #991b1b;
+    }
+
+    .sla-box p {
+      margin: 4px 0;
+      font-size: 13px;
+      color: #78350f;
+    }
+
+    .sla-box.p1 p {
+      color: #7f1d1d;
+    }
+
+    /* Footer */
+    .footer {
+      background: #f9fafb;
+      padding: 20px 24px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .footer p {
+      margin: 4px 0;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .footer .call-id {
+      font-family: monospace;
+      background: #e5e7eb;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* Escalation notice */
+    .escalation-notice {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      text-align: center;
+    }
+
+    .escalation-notice h4 {
+      color: #991b1b;
+      margin: 0 0 8px 0;
+    }
+
+    .escalation-notice p {
+      color: #7f1d1d;
+      margin: 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header - Priority determines color -->
+    <div class="header {{PRIORITY_CLASS}}">
+      <span class="priority-badge">{{PRIORITY_EMOJI}} {{PRIORITY_LABEL}} Priority</span>
+      <h1>New Support Request</h1>
+    </div>
+
+    <div class="content">
+      <!-- Caller Information -->
+      <div class="section">
+        <div class="section-title">Caller Information</div>
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="info-label">Name:</span>
+            <span class="info-value">{{CALLER_NAME}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Company:</span>
+            <span class="info-value">{{COMPANY_NAME}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email:</span>
+            <span class="info-value">{{CALLER_EMAIL}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Callback:</span>
+            <span class="info-value">{{CALLBACK_NUMBER}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Duration:</span>
+            <span class="info-value">{{CALL_DURATION}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Outcome:</span>
+            <span class="info-value">{{OUTCOME}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLA Information (shown for P1/P2) -->
+      {{#if SLA_RESPONSE}}
+      <div class="sla-box {{PRIORITY_CLASS}}">
+        <h4>SLA Requirements</h4>
+        <p><strong>Response Due:</strong> {{SLA_RESPONSE}}</p>
+        <p><strong>Resolution Target:</strong> {{SLA_RESOLUTION}}</p>
+      </div>
+      {{/if}}
+
+      <!-- Escalation Notice (if escalated) -->
+      {{#if ESCALATED}}
+      <div class="escalation-notice">
+        <h4>ESCALATION REQUIRED</h4>
+        <p>{{ESCALATION_REASON}}</p>
+      </div>
+      {{/if}}
+
+      <!-- Issue Summary -->
+      <div class="section">
+        <div class="section-title">Issue Summary</div>
+        <div class="summary-box {{PRIORITY_CLASS}}">
+          <p>{{ISSUE_SUMMARY}}</p>
+        </div>
+      </div>
+
+      <!-- Recording Link (if available) -->
+      {{#if RECORDING_URL}}
+      <div class="button-container">
+        <a href="{{RECORDING_URL}}" class="button">Listen to Recording</a>
+      </div>
+      {{/if}}
+
+      <!-- Call Transcript -->
+      {{#if TRANSCRIPT}}
+      <div class="section">
+        <div class="section-title">Call Transcript</div>
+        <div class="transcript">{{TRANSCRIPT_FORMATTED}}</div>
+      </div>
+      {{/if}}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>This notification was automatically generated by the MBaCio AI Receptionist</p>
+      <p>Call ID: <span class="call-id">{{CONVERSATION_ID}}</span></p>
+      <p>{{TIMESTAMP}}</p>
+    </div>
+  </div>
+</body>
+</html>
